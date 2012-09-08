@@ -4,7 +4,7 @@
 ,	"categories": ["AJAX & Websockets", "API Clients"]
 ,	"jam":
 	{	"dependencies": 
-		{	"couchr": ">= 0.0.5"
+		{	"couchr": ">= 0.0.3"
 		}
 	,	"main": "feeder.js"
 	}

@@ -1,6 +1,5 @@
+
 define('feeder', ['exports', 'couchr'], function (exports, couchr) {
-
-
 
     /**
      * Query a url and watch a couchdb feed for changes since a certain 
@@ -12,10 +11,66 @@ define('feeder', ['exports', 'couchr'], function (exports, couchr) {
      * @api private
      */
 
+
+    // monkey-patch couchr, we will be waiting for
+    // caolan to hopefully let the requests return 
+    // jQuery's jqXHR object in future releases of 
+    // couchr
+    // this function is actually the same, but hidden
+    // inside of couchr.
+    couchr.onComplete = function(options, callback) {
+        return function (req) {
+            var resp;
+            if (ctype = req.getResponseHeader('Content-Type')) {
+                ctype = ctype.split(';')[0];
+            }
+            if (ctype === 'application/json' || ctype === 'text/json') {
+                try {
+                    resp = $.parseJSON(req.responseText)
+                }
+                catch (e) {
+                    return callback(e, null, req);
+                }
+            }
+            else {
+                var ct = req.getResponseHeader("content-type") || "";
+                var xml = ct.indexOf("xml") >= 0;
+                resp = xml ? req.responseXML : req.responseText;
+            }
+            if (req.status == 200 || req.status == 201 || req.status == 202) {
+                callback(null, resp, req);
+            }
+            else if (resp && (resp.error || resp.reason)) {
+                var err = new Error(resp.reason || resp.error);
+                err.error = resp.error;
+                err.reason = resp.reason;
+                err.code = resp.code;
+                err.status = req.status;
+                callback(err, null, req);
+            }
+            else {
+                // TODO: map status code to meaningful error message
+                var msg = req.statusText;
+                if (!msg || msg === 'error') {
+                    msg = 'Returned status code: ' + req.status;
+                }
+                var err2 = new Error(msg);
+                err2.status = req.status;
+                callback(err2, null, req);
+            }
+        };
+    }
+	// the actual monkeypatch for couchr to return
+	// the result of the $.ajax() call
+    couchr.ajax = function (options, callback) {
+        options.complete = couchr.onComplete(options, callback);
+        options.dataType = 'json';
+        return $.ajax(options);
+    };
+
+
     exports.feeds = {};
     exports.follow = function ( view, changes, since, callback) {
-    	console.log("i think i'm being followed: ", view, changes, since )
-
         if(!view.url) // <view> is itself the url
             view = { url: view };
 
@@ -47,9 +102,10 @@ define('feeder', ['exports', 'couchr'], function (exports, couchr) {
                 // update the options object's url to 
                 // reflect the database's update seq
                 var url = changes.url
-                // unfollow
+                // unfollow the current view
                 exports.unfollow(url)
                 changes.url = url + "?since=" + changes.since.toString()
+                // couchr needs to return the ajax
                 exports.feeds[url] = couchr.ajax( changes, onChange )
                 
                 changes.since = data.last_seq
@@ -84,4 +140,5 @@ define('feeder', ['exports', 'couchr'], function (exports, couchr) {
 				callback(e);
 		}
 	}
+
 });
