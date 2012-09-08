@@ -1,0 +1,27 @@
+{	"name": "feeder"
+,	"description": "Lightweight XHR wrapper for CouchDB _changes feeds with associated views"
+,	"version": "0.0.1"
+,	"categories": ["AJAX & Websockets", "API Clients"]
+,	"jam":
+	{	"dependencies": 
+		{	"couchr": ">= 0.0.5"
+		}
+	,	"main": "feeder.js"
+	}
+,	"github": "https://github.com/skiqh/feeder"
+,	"bugs": {
+		"web": "https://github.com/skiqh/feeder/issues"
+	}
+,	"repositories": [
+		{
+			"type": "git"
+,			"url": "https://github.com/skiqh/feeder.git"
+		}
+	]
+,	"licenses": [
+		{
+			"type": "MIT"
+,			"url": "http://www.opensource.org/licenses/mit-license.php"
+		}
+	]
+}
